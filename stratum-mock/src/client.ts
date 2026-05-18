@@ -54,7 +54,7 @@ socket.on("data", (chunk) => {
           const authorizeRequest = {
             id: 2,
             method: "mining.authorize",
-            params: [config.DEFAULT_WORKER, config.SESSION_TOKEN],
+            params: [config.WORKER_NAME, config.SESSION_TOKEN],
           };
 
           socket.write(`${JSON.stringify(authorizeRequest)}\n`);

@@ -73,6 +73,24 @@ Out of scope:
 - worker limits per tier
 - automatic treasury accounting
 
+## Prototype 11 — Tier-based Worker Limits
+
+Status: prototype
+
+Scope:
+
+- tier limits in Stratum Mock
+- active worker counting per wallet
+- TCP disconnect cleanup
+- worker rejection when tier limit exceeded
+
+Out of scope:
+
+- distributed worker registry
+- real ASIC enforcement
+- production pool accounting
+- payouts
+
 ## Strategic Direction
 
 - Membership access is powered by RMZ through Tonalli Wallet.

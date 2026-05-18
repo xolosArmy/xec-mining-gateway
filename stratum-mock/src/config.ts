@@ -25,5 +25,20 @@ export const config = {
   DEFAULT_WORKER:
     process.env.DEFAULT_WORKER ??
     "ecash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a.worker1",
+  WORKER_NAME:
+    process.env.WORKER_NAME ??
+    process.env.DEFAULT_WORKER ??
+    "ecash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a.worker1",
   SESSION_TOKEN: process.env.SESSION_TOKEN ?? "",
 } as const;
+
+export const WORKER_LIMITS: Record<string, number> = {
+  base: 1,
+  active: 5,
+  pro: 20,
+  guardian: 100,
+  "founding-miner": 100,
+  prototype: 1,
+};
+
+export const DEFAULT_WORKER_LIMIT = 1;

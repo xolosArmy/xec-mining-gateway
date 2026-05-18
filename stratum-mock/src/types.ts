@@ -20,12 +20,14 @@ export interface WorkerRecord {
   plan: string;
   connectedAt: string;
   authorized: boolean;
+  connectionId?: string;
 }
 
 export interface SessionPayload {
-  sub: string;
   wallet: string;
-  plan: string;
-  iat: number;
-  exp: number;
+  sub?: string;
+  plan?: string;
+  membershipValidUntil?: string;
+  iat?: number;
+  exp?: number;
 }

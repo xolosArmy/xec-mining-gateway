@@ -1,8 +1,16 @@
 import net from "node:net";
 
-import { config } from "./config";
+import { randomUUID } from "node:crypto";
+
+import { config, DEFAULT_WORKER_LIMIT, WORKER_LIMITS } from "./config";
 import { verifySessionToken } from "./services/token";
-import { registerWorker } from "./services/workerRegistry";
+import {
+  countActiveWorkersByWallet,
+  getWorkersByWallet,
+  listWorkers,
+  registerWorker,
+  removeWorkersByConnection,
+} from "./services/workerRegistry";
 import { JsonRpcRequest, JsonRpcResponse, MiningAuthorizeParams } from "./types";
 
 const respond = (socket: net.Socket, response: JsonRpcResponse): void => {
@@ -24,6 +32,8 @@ const isJsonRpcRequest = (value: unknown): value is JsonRpcRequest => {
 };
 
 const handleSubscribe = (socket: net.Socket, request: JsonRpcRequest): void => {
+  console.log(`mining.subscribe received id=${String(request.id)}`);
+
   respond(socket, {
     id: request.id,
     result: [
@@ -41,10 +51,17 @@ const handleSubscribe = (socket: net.Socket, request: JsonRpcRequest): void => {
 const handleAuthorize = async (
   socket: net.Socket,
   request: JsonRpcRequest,
+  connectionId: string,
+  authorizedWorkers: Set<string>,
 ): Promise<void> => {
-  const [workerName, sessionToken] = request.params as MiningAuthorizeParams;
+  const params = request.params as MiningAuthorizeParams;
+  const [workerName, sessionToken] = params;
 
-  if (typeof workerName !== "string" || typeof sessionToken !== "string") {
+  if (
+    !Array.isArray(params) ||
+    typeof workerName !== "string" ||
+    typeof sessionToken !== "string"
+  ) {
     respond(socket, {
       id: request.id,
       result: false,
@@ -56,6 +73,7 @@ const handleAuthorize = async (
   const session = await verifySessionToken(sessionToken);
 
   if (!session) {
+    console.warn("mining.authorize rejected due to invalid token");
     respond(socket, {
       id: request.id,
       result: false,
@@ -64,10 +82,39 @@ const handleAuthorize = async (
     return;
   }
 
-  const worker = registerWorker(workerName, session.wallet, session.plan);
+  const wallet = session.wallet.trim().toLowerCase();
+  const tier = session.plan || "prototype";
+  const limit = WORKER_LIMITS[tier] || DEFAULT_WORKER_LIMIT;
+  const existingWorkers = getWorkersByWallet(wallet);
+  const existingWorker = existingWorkers.find(
+    (worker) => worker.workerName === workerName,
+  );
+  const currentCount = countActiveWorkersByWallet(wallet);
+
+  if (!existingWorker && currentCount >= limit) {
+    console.warn(
+      `mining.authorize rejected due to worker limit wallet=${wallet} tier=${tier} currentCount=${currentCount} limit=${limit} workerName=${workerName}`,
+    );
+    respond(socket, {
+      id: request.id,
+      result: false,
+      error: "Worker limit exceeded for your membership tier",
+    });
+    return;
+  }
+
+  const worker = registerWorker({
+    workerName,
+    wallet,
+    plan: tier,
+    connectionId,
+    authorized: true,
+    connectedAt: new Date().toISOString(),
+  });
+  authorizedWorkers.add(worker.workerName);
 
   console.log(
-    `Authorized worker=${worker.workerName} wallet=${worker.wallet} plan=${worker.plan}`,
+    `mining.authorize accepted worker=${worker.workerName} wallet=${worker.wallet} tier=${worker.plan} currentCount=${existingWorker ? currentCount : currentCount + 1} limit=${limit}`,
   );
 
   respond(socket, {
@@ -77,10 +124,44 @@ const handleAuthorize = async (
   });
 };
 
+const cleanupConnectionWorkers = (connectionId: string, remote: string): void => {
+  const registeredWorkers: string[] = [];
+
+  for (const worker of listWorkers()) {
+    if (worker.connectionId === connectionId) {
+      registeredWorkers.push(worker.workerName);
+    }
+  }
+
+  removeWorkersByConnection(connectionId);
+
+  if (registeredWorkers.length > 0) {
+    console.log(
+      `worker disconnected and slot released connectionId=${connectionId} remote=${remote} workers=${registeredWorkers.join(",")}`,
+    );
+  }
+};
+
 const server = net.createServer((socket) => {
   const remote = `${socket.remoteAddress ?? "unknown"}:${socket.remotePort ?? "unknown"}`;
+  const connectionId = randomUUID();
+  const authorizedWorkers = new Set<string>();
+  let cleanedUp = false;
 
-  console.log(`Client connected from ${remote}`);
+  const releaseConnectionWorkers = (): void => {
+    if (cleanedUp) {
+      return;
+    }
+
+    cleanedUp = true;
+    cleanupConnectionWorkers(connectionId, remote);
+
+    if (authorizedWorkers.size > 0) {
+      authorizedWorkers.clear();
+    }
+  };
+
+  console.log(`connection opened remote=${remote} connectionId=${connectionId}`);
 
   let buffer = "";
 
@@ -106,7 +187,7 @@ const server = net.createServer((socket) => {
           } else if (parsed.method === "mining.subscribe") {
             handleSubscribe(socket, parsed);
           } else if (parsed.method === "mining.authorize") {
-            void handleAuthorize(socket, parsed);
+            void handleAuthorize(socket, parsed, connectionId, authorizedWorkers);
           } else {
             respond(socket, {
               id: parsed.id ?? null,
@@ -127,11 +208,18 @@ const server = net.createServer((socket) => {
     }
   });
 
+  socket.on("end", () => {
+    releaseConnectionWorkers();
+    console.log(`Client ended from ${remote} connectionId=${connectionId}`);
+  });
+
   socket.on("close", () => {
-    console.log(`Client disconnected from ${remote}`);
+    releaseConnectionWorkers();
+    console.log(`Client disconnected from ${remote} connectionId=${connectionId}`);
   });
 
   socket.on("error", (error) => {
+    releaseConnectionWorkers();
     console.error(`Socket error from ${remote}:`, error.message);
   });
 });

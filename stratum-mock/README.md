@@ -69,3 +69,37 @@ Prototype 7 replaces the old in-memory revocation gap with a shared Redis cache 
 `revoked:<sha256(token)>`
 
 If Redis is unavailable during authorization, the Stratum mock fails closed and returns the same invalid-token response.
+
+## Prototype 11 — Tier-based Worker Limits
+
+The Stratum Mock now reads the membership `plan` or tier from the JWT during `mining.authorize`.
+
+- `base` allows 1 concurrent worker
+- higher tiers allow more concurrent workers
+- worker slots are counted per wallet
+- a TCP disconnect releases the slot for every worker tied to that connection
+
+### Test a second worker rejection
+
+Use the same base-tier token in both terminals and change only `WORKER_NAME`.
+
+Terminal A:
+
+```bash
+WORKER_NAME=ecash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a.worker1 npm run dev:client
+```
+
+Terminal B:
+
+```bash
+WORKER_NAME=ecash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a.worker2 npm run dev:client
+```
+
+Expected for `base`:
+
+- `worker1` = `true`
+- `worker2` = `false`
+
+After closing `worker1`:
+
+- `worker2` = `true`

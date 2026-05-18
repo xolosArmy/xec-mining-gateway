@@ -29,11 +29,12 @@ export const verifySessionToken = async (
     const decoded = jwt.verify(token, config.SESSION_SECRET) as SessionPayload;
 
     if (
-      typeof decoded.sub !== "string" ||
       typeof decoded.wallet !== "string" ||
-      typeof decoded.plan !== "string" ||
-      typeof decoded.iat !== "number" ||
-      typeof decoded.exp !== "number"
+      (decoded.plan !== undefined && typeof decoded.plan !== "string") ||
+      (decoded.membershipValidUntil !== undefined &&
+        typeof decoded.membershipValidUntil !== "string") ||
+      (decoded.iat !== undefined && typeof decoded.iat !== "number") ||
+      (decoded.exp !== undefined && typeof decoded.exp !== "number")
     ) {
       return null;
     }
