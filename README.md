@@ -17,6 +17,10 @@ This project aims to build a non-custodial, membership-based mining gateway desi
 - Non-custodial infrastructure
 - No private key custody
 - Membership-based access
+- RMZ-powered Decentralized SaaS model
+- Recurring RMZ membership payments sustain infrastructure
+- Proof of Hold is the prototype model
+- Proof of Payment is the production direction
 - Separation of control plane and data plane
 - Open-source first
 - Built for the eCash ecosystem

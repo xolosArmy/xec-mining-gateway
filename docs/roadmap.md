@@ -10,6 +10,17 @@
 - 🎯 Prototype 6 — Chronik RMZ Membership Verification
 - 🎯 Prototype 7 — Shared Redis Revocation Cache
 
+## Phase 2 — Decentralized SaaS & Production Billing
+
+- Treasury address deployment
+- Chronik Proof-of-Payment verification
+- Monthly RMZ membership tiers
+- 30-day membership window
+- Session token lifecycle tied to payment freshness
+- Optional Mining Pass NFT integration
+- Treasury dashboard / transparency page
+- Production billing audit logs
+
 ## Prototype 7 — Shared Redis Revocation Cache
 
 Status: prototype
@@ -48,6 +59,8 @@ Out of scope:
 - Tonalli Wallet provides identity; RMZ provides membership.
 - eCash México builds the infrastructure for the XEC ecosystem.
 - Prototype 6 introduces Chronik-based RMZ verification.
+- Current Prototype 6 uses Proof of Hold.
+- Production Phase 2 moves toward Proof of Payment.
 
 ## During Teyolia Campaign
 

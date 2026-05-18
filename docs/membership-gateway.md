@@ -154,6 +154,18 @@ RMZ is the required membership layer for gateway access. Tonalli Wallet is the P
 
 Production membership will be RMZ-based and on-chain. Billing, token locking or burning, and NFT pass validation are out of scope for this prototype.
 
+## Membership Model Evolution
+
+Prototype:
+
+- Proof of Hold via Chronik
+
+Production:
+
+- Proof of Payment via Chronik
+- monthly RMZ payments to treasury
+- possible Mining Pass NFT
+
 ## Operational Notes
 
 - Challenge generation and signature verification belong to the control plane.

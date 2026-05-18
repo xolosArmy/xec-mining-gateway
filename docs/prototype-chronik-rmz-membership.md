@@ -1,5 +1,7 @@
 # Prototype 6 - Chronik RMZ Membership Verification
 
+This prototype currently implements Proof of Hold for development and testing. The production model is expected to evolve toward Proof of Payment, where Chronik verifies recent RMZ membership payments to an eCash México Treasury address.
+
 ## Purpose
 
 Prototype 6 adds real on-chain RMZ membership verification to the Membership Gateway while preserving the existing mock path for development and demos.
