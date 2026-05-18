@@ -85,6 +85,14 @@ Therefore:
 - 25,000 RMZ = 250,000,000 atoms
 - 50,000 RMZ = 500,000,000 atoms
 
+## Phase 2 Implementation
+
+Phase 2 implementation begins with `MEMBERSHIP_MODE=payment`.
+
+- Prototype 6 = Proof of Hold
+- Prototype 9 = Proof of Payment prototype
+- Production direction = monthly RMZ payments to treasury
+
 ## Future Technical Implementation
 
 Production billing may be implemented using one or more of these mechanisms:

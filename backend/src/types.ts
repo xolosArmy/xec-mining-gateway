@@ -14,10 +14,18 @@ export interface MembershipStatus {
   wallet: string;
   tier: MembershipTier;
   active: boolean;
-  source: "mock" | "chronik";
+  source: "mock" | "chronik" | "payment";
   rmzAtoms?: string;
   rmzRequiredAtoms?: string;
   tokenId?: string;
+  paymentMode?: boolean;
+  treasuryAddress?: string;
+  requiredPaymentAtoms?: string;
+  paidAtoms?: string;
+  paymentTxid?: string;
+  paymentTimestamp?: string;
+  validUntil?: string;
+  windowDays?: number;
   error?: string;
 }
 
@@ -25,6 +33,7 @@ export interface SessionPayload {
   sub: string;
   wallet: string;
   plan: MembershipTier;
+  membershipValidUntil?: string;
   iat: number;
   exp: number;
 }
@@ -46,6 +55,7 @@ export interface SessionStatusQuery {
   wallet?: string;
   plan?: MembershipTier;
   expiresAt?: string;
+  membershipValidUntil?: string;
 }
 
 export interface RevokeSessionBody {

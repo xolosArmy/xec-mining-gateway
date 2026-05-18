@@ -16,6 +16,24 @@ import { AuthRequestChallengeBody, AuthVerifyBody } from "../types";
 
 const router = Router();
 
+const toMembershipResponse = (membership: Awaited<ReturnType<typeof isRmzMember>>) => ({
+  active: membership.active,
+  tier: membership.tier,
+  source: membership.source,
+  rmzAtoms: membership.rmzAtoms,
+  rmzRequiredAtoms: membership.rmzRequiredAtoms,
+  tokenId: membership.tokenId,
+  paymentMode: membership.paymentMode,
+  treasuryAddress: membership.treasuryAddress,
+  requiredPaymentAtoms: membership.requiredPaymentAtoms,
+  paidAtoms: membership.paidAtoms,
+  paymentTxid: membership.paymentTxid,
+  paymentTimestamp: membership.paymentTimestamp,
+  validUntil: membership.validUntil,
+  windowDays: membership.windowDays,
+  error: membership.error,
+});
+
 router.post("/request-challenge", (req, res) => {
   const { wallet } = req.body as Partial<AuthRequestChallengeBody>;
 
@@ -117,16 +135,11 @@ router.post("/verify", async (req, res) => {
 
   if (!membership.active) {
     return res.status(403).json({
-      error: "RMZ membership required",
-      membership: {
-        active: membership.active,
-        tier: membership.tier,
-        source: membership.source,
-        rmzAtoms: membership.rmzAtoms,
-        rmzRequiredAtoms: membership.rmzRequiredAtoms,
-        tokenId: membership.tokenId,
-        error: membership.error,
-      },
+      error:
+        config.MEMBERSHIP_MODE === "payment"
+          ? "RMZ membership payment required"
+          : "RMZ membership required",
+      membership: toMembershipResponse(membership),
     });
   }
 
@@ -135,6 +148,7 @@ router.post("/verify", async (req, res) => {
   const sessionToken = issueSessionToken({
     wallet: normalizedWallet,
     plan: membership.tier,
+    membershipValidUntil: membership.validUntil,
   });
 
   return res.json({
@@ -142,14 +156,7 @@ router.post("/verify", async (req, res) => {
     tokenType: "Bearer",
     expiresIn: config.SESSION_TTL_SECONDS,
     plan: membership.tier,
-    membership: {
-      active: membership.active,
-      tier: membership.tier,
-      source: membership.source,
-      rmzAtoms: membership.rmzAtoms,
-      rmzRequiredAtoms: membership.rmzRequiredAtoms,
-      tokenId: membership.tokenId,
-    },
+    membership: toMembershipResponse(membership),
   });
 });
 

@@ -61,6 +61,75 @@ const getStatusCode = (error: unknown): number | undefined => {
   return undefined;
 };
 
+const renderMembershipFields = (membership: MembershipResponse) => (
+  <div className="result-grid">
+    <div>
+      <span className="result-label">Membership Active</span>
+      <pre className="code-block">{String(membership.active)}</pre>
+    </div>
+    <div>
+      <span className="result-label">Membership Tier</span>
+      <pre className="code-block">{membership.tier}</pre>
+    </div>
+    <div>
+      <span className="result-label">Membership Source</span>
+      <pre className="code-block">{membership.source}</pre>
+    </div>
+    <div>
+      <span className="result-label">RMZ Atoms</span>
+      <pre className="code-block">{membership.rmzAtoms ?? "n/a"}</pre>
+    </div>
+    <div>
+      <span className="result-label">RMZ Required Atoms</span>
+      <pre className="code-block">{membership.rmzRequiredAtoms ?? "n/a"}</pre>
+    </div>
+    <div>
+      <span className="result-label">Payment Mode</span>
+      <pre className="code-block">{String(membership.paymentMode ?? false)}</pre>
+    </div>
+    <div className="result-full">
+      <span className="result-label">RMZ Token ID</span>
+      <pre className="code-block">{membership.tokenId ?? "n/a"}</pre>
+    </div>
+    <div className="result-full">
+      <span className="result-label">Treasury Address</span>
+      <pre className="code-block">{membership.treasuryAddress ?? "n/a"}</pre>
+    </div>
+    <div>
+      <span className="result-label">Required Payment Atoms</span>
+      <pre className="code-block">
+        {membership.requiredPaymentAtoms ?? "n/a"}
+      </pre>
+    </div>
+    <div>
+      <span className="result-label">Paid Atoms</span>
+      <pre className="code-block">{membership.paidAtoms ?? "n/a"}</pre>
+    </div>
+    <div>
+      <span className="result-label">Window Days</span>
+      <pre className="code-block">{membership.windowDays ?? "n/a"}</pre>
+    </div>
+    <div className="result-full">
+      <span className="result-label">Payment Txid</span>
+      <pre className="code-block">{membership.paymentTxid ?? "n/a"}</pre>
+    </div>
+    <div>
+      <span className="result-label">Payment Timestamp</span>
+      <pre className="code-block">{membership.paymentTimestamp ?? "n/a"}</pre>
+    </div>
+    <div>
+      <span className="result-label">Valid Until</span>
+      <pre className="code-block">{membership.validUntil ?? "n/a"}</pre>
+    </div>
+    {membership.error && (
+      <div className="result-full">
+        <span className="result-label">Membership Error</span>
+        <pre className="code-block">{membership.error}</pre>
+      </div>
+    )}
+  </div>
+);
+
 function App() {
   const [wallet, setWallet] = useState("");
   const [challenge, setChallenge] = useState<ChallengeResponse | null>(null);
@@ -109,8 +178,11 @@ function App() {
       } satisfies ApiError;
       setLatestResponse(apiError);
       setErrorMessage(
-        apiError.status === 403 || apiError.error === "RMZ membership required"
-          ? "RMZ membership required"
+        apiError.status === 403 &&
+        apiError.error === "RMZ membership payment required"
+          ? "RMZ membership payment required"
+          : apiError.status === 403 || apiError.error === "RMZ membership required"
+            ? "RMZ membership required"
           : apiError.error,
       );
     } finally {
@@ -158,6 +230,8 @@ function App() {
     } catch (error) {
       const apiError = {
         error: getErrorMessage(error),
+        status: getStatusCode(error),
+        membership: getMembershipFromError(error),
       } satisfies ApiError;
       setLatestResponse(apiError);
       setErrorMessage(apiError.error);
@@ -236,6 +310,10 @@ function App() {
           <p className="note">
             Chronik mode verifies RMZ ownership on-chain. Mock mode uses a
             development registry.
+          </p>
+          <p className="note">
+            Payment mode verifies recent RMZ payments to the eCash México
+            Treasury. Proof-of-Hold mode remains available for prototype testing.
           </p>
         </header>
 
@@ -369,102 +447,43 @@ function App() {
           </button>
 
           {session && (
-            <div className="result-grid">
-              <div>
-                <span className="result-label">Token Type</span>
-                <pre className="code-block">{session.tokenType}</pre>
+            <>
+              <div className="result-grid">
+                <div>
+                  <span className="result-label">Token Type</span>
+                  <pre className="code-block">{session.tokenType}</pre>
+                </div>
+                <div>
+                  <span className="result-label">Plan</span>
+                  <pre className="code-block">{session.plan}</pre>
+                </div>
+                <div>
+                  <span className="result-label">Expires In</span>
+                  <pre className="code-block">{session.expiresIn} seconds</pre>
+                </div>
+                <div className="result-full">
+                  <span className="result-label">Session Token</span>
+                  <pre className="code-block">{session.sessionToken}</pre>
+                </div>
               </div>
-              <div>
-                <span className="result-label">Plan</span>
-                <pre className="code-block">{session.plan}</pre>
-              </div>
-              <div>
-                <span className="result-label">Membership Active</span>
-                <pre className="code-block">
-                  {String(session.membership?.active ?? false)}
-                </pre>
-              </div>
-              <div>
-                <span className="result-label">Membership Tier</span>
-                <pre className="code-block">
-                  {session.membership?.tier ?? "n/a"}
-                </pre>
-              </div>
-              <div>
-                <span className="result-label">Membership Source</span>
-                <pre className="code-block">
-                  {session.membership?.source ?? "n/a"}
-                </pre>
-              </div>
-              <div>
-                <span className="result-label">RMZ Atoms</span>
-                <pre className="code-block">
-                  {session.membership?.rmzAtoms ?? "n/a"}
-                </pre>
-              </div>
-              <div>
-                <span className="result-label">RMZ Required Atoms</span>
-                <pre className="code-block">
-                  {session.membership?.rmzRequiredAtoms ?? "n/a"}
-                </pre>
-              </div>
-              <div>
-                <span className="result-label">Expires In</span>
-                <pre className="code-block">{session.expiresIn} seconds</pre>
-              </div>
-              <div className="result-full">
-                <span className="result-label">RMZ Token ID</span>
-                <pre className="code-block">
-                  {session.membership?.tokenId ?? "n/a"}
-                </pre>
-              </div>
-              <div className="result-full">
-                <span className="result-label">Session Token</span>
-                <pre className="code-block">{session.sessionToken}</pre>
-              </div>
-            </div>
+              {session.membership && renderMembershipFields(session.membership)}
+            </>
           )}
 
           {!session &&
             latestResponse &&
             "membership" in latestResponse &&
-            latestResponse.membership && (
-              <div className="result-grid">
-                <div>
-                  <span className="result-label">Membership Active</span>
-                  <pre className="code-block">
-                    {String(latestResponse.membership.active)}
-                  </pre>
-                </div>
-                <div>
-                  <span className="result-label">Membership Tier</span>
-                  <pre className="code-block">{latestResponse.membership.tier}</pre>
-                </div>
-                <div>
-                  <span className="result-label">Membership Source</span>
-                  <pre className="code-block">
-                    {latestResponse.membership.source}
-                  </pre>
-                </div>
-                <div>
-                  <span className="result-label">RMZ Atoms</span>
-                  <pre className="code-block">
-                    {latestResponse.membership.rmzAtoms ?? "n/a"}
-                  </pre>
-                </div>
-                <div>
-                  <span className="result-label">RMZ Required Atoms</span>
-                  <pre className="code-block">
-                    {latestResponse.membership.rmzRequiredAtoms ?? "n/a"}
-                  </pre>
-                </div>
-                <div className="result-full">
-                  <span className="result-label">RMZ Token ID</span>
-                  <pre className="code-block">
-                    {latestResponse.membership.tokenId ?? "n/a"}
-                  </pre>
-                </div>
-              </div>
+            latestResponse.membership &&
+            renderMembershipFields(latestResponse.membership)}
+
+          {!session &&
+            latestResponse &&
+            "error" in latestResponse &&
+            latestResponse.error === "RMZ membership payment required" && (
+              <p className="note">
+                Payment mode requires a recent RMZ treasury payment within the
+                configured membership window.
+              </p>
             )}
         </section>
 
@@ -517,6 +536,12 @@ function App() {
                 <span className="result-label">Expires At</span>
                 <pre className="code-block">
                   {sessionStatus.expiresAt ?? "n/a"}
+                </pre>
+              </div>
+              <div className="result-full">
+                <span className="result-label">Membership Valid Until</span>
+                <pre className="code-block">
+                  {sessionStatus.membershipValidUntil ?? "n/a"}
                 </pre>
               </div>
             </div>

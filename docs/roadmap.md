@@ -52,6 +52,27 @@ Out of scope:
 - Redis revocation
 - production pool payouts
 
+## Prototype 9 — RMZ Treasury Proof-of-Payment Verification
+
+Status: prototype
+
+Scope:
+
+- payment mode
+- treasury address config
+- payment window
+- RMZ token payment detection
+- required atom threshold
+- 30-day membership concept
+
+Out of scope:
+
+- production billing dashboard
+- full audit logs
+- Mining Pass NFT
+- worker limits per tier
+- automatic treasury accounting
+
 ## Strategic Direction
 
 - Membership access is powered by RMZ through Tonalli Wallet.

@@ -10,6 +10,7 @@ import { MembershipTier, SessionPayload } from "../types";
 interface IssueSessionTokenParams {
   wallet: string;
   plan?: MembershipTier;
+  membershipValidUntil?: string;
 }
 
 const buildRevocationKey = (token: string): string => {
@@ -58,6 +59,7 @@ export const decodeSessionToken = (token: string): SessionPayload | null => {
 export const issueSessionToken = ({
   wallet,
   plan = "base",
+  membershipValidUntil,
 }: IssueSessionTokenParams): string => {
   const issuedAt = Math.floor(Date.now() / 1000);
   const expiresAt = issuedAt + config.SESSION_TTL_SECONDS;
@@ -66,6 +68,7 @@ export const issueSessionToken = ({
     sub: uuidv4(),
     wallet,
     plan,
+    ...(membershipValidUntil ? { membershipValidUntil } : {}),
     iat: issuedAt,
     exp: expiresAt,
   };

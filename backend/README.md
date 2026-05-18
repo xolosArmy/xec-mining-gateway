@@ -315,3 +315,20 @@ curl -i -X POST http://localhost:3001/v1/auth/verify \
 ```
 
 Expected result: `403 RMZ membership required`.
+
+## Prototype 9 - Proof of Payment
+
+Prototype 9 adds `MEMBERSHIP_MODE=payment` as the Phase 2 economic prototype while preserving mock mode, Tonalli verification, and the existing Chronik Proof-of-Hold mode.
+
+### Setup
+
+```bash
+MEMBERSHIP_MODE=payment
+RMZ_TREASURY_ADDRESS=ecash:qq7qn90ev23ecastqmn8as00u8mcp4tzsspvt5dtlk
+PAYMENT_WINDOW_DAYS=30
+DEFAULT_REQUIRED_PAYMENT_ATOMS=25000000
+```
+
+- the wallet must have sent at least `2500` RMZ (`25000000` atoms) to the treasury within the configured payment window
+- if `RMZ_TREASURY_ADDRESS` is missing, payment mode rejects access
+- payment mode is the production economic direction

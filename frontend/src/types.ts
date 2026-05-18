@@ -16,6 +16,14 @@ export interface MembershipResponse {
   rmzAtoms?: string;
   rmzRequiredAtoms?: string;
   tokenId?: string;
+  paymentMode?: boolean;
+  treasuryAddress?: string;
+  requiredPaymentAtoms?: string;
+  paidAtoms?: string;
+  paymentTxid?: string;
+  paymentTimestamp?: string;
+  validUntil?: string;
+  windowDays?: number;
   error?: string;
 }
 
@@ -32,6 +40,7 @@ export interface SessionStatusResponse {
   wallet?: string;
   plan?: string;
   expiresAt?: string;
+  membershipValidUntil?: string;
 }
 
 export interface ApiError {

@@ -45,6 +45,7 @@ router.get("/status", async (req, res) => {
     wallet: session.wallet,
     plan: session.plan,
     expiresAt: new Date(session.exp * 1000).toISOString(),
+    membershipValidUntil: session.membershipValidUntil,
   };
 
   return res.json(response);

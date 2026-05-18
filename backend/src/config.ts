@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const MEMBERSHIP_MODES = ["mock", "chronik"] as const;
+const MEMBERSHIP_MODES = ["mock", "chronik", "payment"] as const;
 
 const parseNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number(value);
@@ -36,8 +36,8 @@ const parseMembershipMode = (
 
   const normalized = value.trim().toLowerCase();
 
-  return MEMBERSHIP_MODES.includes(normalized as "mock" | "chronik")
-    ? (normalized as "mock" | "chronik")
+  return MEMBERSHIP_MODES.includes(normalized as (typeof MEMBERSHIP_MODES)[number])
+    ? (normalized as (typeof MEMBERSHIP_MODES)[number])
     : "mock";
 };
 
@@ -70,5 +70,29 @@ export const config = {
   MIN_RMZ_ATOMS_REQUIRED: parseBigInt(
     process.env.MIN_RMZ_ATOMS_REQUIRED,
     10000n,
+  ),
+  RMZ_TREASURY_ADDRESS:
+    process.env.RMZ_TREASURY_ADDRESS?.trim() ??
+    "ecash:qq7qn90ev23ecastqmn8as00u8mcp4tzsspvt5dtlk",
+  PAYMENT_WINDOW_DAYS: parseNumber(process.env.PAYMENT_WINDOW_DAYS, 30),
+  BASE_MINER_RMZ_ATOMS: parseBigInt(
+    process.env.BASE_MINER_RMZ_ATOMS,
+    25000000n,
+  ),
+  ACTIVE_MINER_RMZ_ATOMS: parseBigInt(
+    process.env.ACTIVE_MINER_RMZ_ATOMS,
+    100000000n,
+  ),
+  PRO_MINER_RMZ_ATOMS: parseBigInt(
+    process.env.PRO_MINER_RMZ_ATOMS,
+    250000000n,
+  ),
+  GUARDIAN_RMZ_ATOMS: parseBigInt(
+    process.env.GUARDIAN_RMZ_ATOMS,
+    500000000n,
+  ),
+  DEFAULT_REQUIRED_PAYMENT_ATOMS: parseBigInt(
+    process.env.DEFAULT_REQUIRED_PAYMENT_ATOMS,
+    parseBigInt(process.env.BASE_MINER_RMZ_ATOMS, 25000000n),
   ),
 } as const;
