@@ -6,6 +6,7 @@
   "scripts": {
     "dev:server": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:client": "ts-node-dev --respawn --transpile-only src/client.ts",
+    "dev:upstream-test": "ts-node-dev --respawn --transpile-only src/upstreamTestServer.ts",
     "build": "tsc",
     "start:server": "node dist/server.js",
     "start:client": "node dist/client.js"

@@ -110,6 +110,26 @@ Out of scope:
 - hashrate charts
 - production stale worker cleanup
 
+## Prototype 13 — Stratum Proxy Gateway
+
+Status: prototype
+
+Scope:
+
+- proxy mode
+- upstream TCP connection
+- local mining.authorize gate
+- tier limits before upstream access
+- bidirectional Stratum traffic forwarding
+
+Out of scope:
+
+- full pool engine
+- payouts
+- block template generation
+- share accounting
+- production upstream failover
+
 ## Strategic Direction
 
 - Membership access is powered by RMZ through Tonalli Wallet.

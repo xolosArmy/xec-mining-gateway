@@ -1,11 +1,13 @@
+export type JsonRpcId = number | string | null;
+
 export interface JsonRpcRequest {
-  id: number | string | null;
+  id: JsonRpcId;
   method: "mining.subscribe" | "mining.authorize" | string;
   params: unknown[];
 }
 
 export interface JsonRpcResponse {
-  id: number | string | null;
+  id: JsonRpcId;
   result: unknown;
   error: string | null;
 }
@@ -13,6 +15,10 @@ export interface JsonRpcResponse {
 export type MiningSubscribeParams = [];
 
 export type MiningAuthorizeParams = [workerName: string, sessionToken: string];
+
+export type StratumMode = "mock" | "proxy";
+
+export type ProxyAuthStrategy = "pass-through" | "upstream-account";
 
 export interface WorkerRecord {
   workerName: string;
