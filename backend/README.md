@@ -75,6 +75,14 @@ REDIS_URL=redis://localhost:6379
 
 If Redis is unavailable, `POST /v1/session/revoke` returns a clear error and does not pretend the token was revoked.
 
+## Prototype 12 — Miner Dashboard
+
+Prototype 12 extends Redis usage beyond revocations.
+
+- Stratum publishes active worker state into Redis for each wallet.
+- `GET /v1/session/status` now returns worker usage fields such as worker limit, active workers, available slots, and worker summaries.
+- `GET /v1/session/status?refreshMembership=true` optionally refreshes membership and payment metadata without making every status request hit Chronik by default.
+
 ## Test Health
 
 ```bash

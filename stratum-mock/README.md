@@ -103,3 +103,22 @@ Expected for `base`:
 After closing `worker1`:
 
 - `worker2` = `true`
+
+## Prototype 12 — Miner Dashboard
+
+The Stratum Mock now writes active worker state into Redis in addition to using its in-memory registry for worker-limit enforcement.
+
+- `workers:<wallet>` stores the active worker names for a normalized wallet.
+- `worker:<workerName>` stores worker details for dashboard display.
+- The backend reads those Redis keys through `GET /v1/session/status`.
+
+### Test dashboard active worker count
+
+1. Start Redis, backend, and frontend.
+2. Generate a valid session token from the frontend.
+3. Refresh the Miner Dashboard and confirm `0 / limit` workers.
+4. Put the token into `stratum-mock/.env` as `SESSION_TOKEN`.
+5. Start the Stratum Mock server.
+6. Run the worker client and confirm `mining.authorize` returns `true`.
+7. Refresh the dashboard and confirm the active worker count increases.
+8. Stop the worker client and confirm the count returns to zero after a refresh.

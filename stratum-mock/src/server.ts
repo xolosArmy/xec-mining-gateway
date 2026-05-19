@@ -103,7 +103,7 @@ const handleAuthorize = async (
     return;
   }
 
-  const worker = registerWorker({
+  const worker = await registerWorker({
     workerName,
     wallet,
     plan: tier,
@@ -124,7 +124,10 @@ const handleAuthorize = async (
   });
 };
 
-const cleanupConnectionWorkers = (connectionId: string, remote: string): void => {
+const cleanupConnectionWorkers = async (
+  connectionId: string,
+  remote: string,
+): Promise<void> => {
   const registeredWorkers: string[] = [];
 
   for (const worker of listWorkers()) {
@@ -133,7 +136,7 @@ const cleanupConnectionWorkers = (connectionId: string, remote: string): void =>
     }
   }
 
-  removeWorkersByConnection(connectionId);
+  await removeWorkersByConnection(connectionId);
 
   if (registeredWorkers.length > 0) {
     console.log(
@@ -148,13 +151,13 @@ const server = net.createServer((socket) => {
   const authorizedWorkers = new Set<string>();
   let cleanedUp = false;
 
-  const releaseConnectionWorkers = (): void => {
+  const releaseConnectionWorkers = async (): Promise<void> => {
     if (cleanedUp) {
       return;
     }
 
     cleanedUp = true;
-    cleanupConnectionWorkers(connectionId, remote);
+    await cleanupConnectionWorkers(connectionId, remote);
 
     if (authorizedWorkers.size > 0) {
       authorizedWorkers.clear();
@@ -208,18 +211,18 @@ const server = net.createServer((socket) => {
     }
   });
 
-  socket.on("end", () => {
-    releaseConnectionWorkers();
+  socket.on("end", async () => {
+    await releaseConnectionWorkers();
     console.log(`Client ended from ${remote} connectionId=${connectionId}`);
   });
 
-  socket.on("close", () => {
-    releaseConnectionWorkers();
+  socket.on("close", async () => {
+    await releaseConnectionWorkers();
     console.log(`Client disconnected from ${remote} connectionId=${connectionId}`);
   });
 
-  socket.on("error", (error) => {
-    releaseConnectionWorkers();
+  socket.on("error", async (error) => {
+    await releaseConnectionWorkers();
     console.error(`Socket error from ${remote}:`, error.message);
   });
 });

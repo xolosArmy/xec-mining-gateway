@@ -9,7 +9,7 @@ export interface ChallengeResponse {
 
 export type VerificationMode = "mock" | "tonalli";
 
-export interface MembershipResponse {
+export interface MembershipStatus {
   active: boolean;
   tier: string;
   source: string;
@@ -27,12 +27,31 @@ export interface MembershipResponse {
   error?: string;
 }
 
+export type MembershipResponse = MembershipStatus;
+
 export interface VerifyResponse {
   sessionToken: string;
   tokenType: string;
   expiresIn: number;
   plan: string;
-  membership?: MembershipResponse;
+  membership?: MembershipStatus;
+}
+
+export interface WorkerSummary {
+  workerName: string;
+  connectedAt?: string;
+  authorized?: boolean;
+}
+
+export interface WorkerStatus {
+  wallet: string;
+  plan: string;
+  workerLimit: number;
+  activeWorkers: number;
+  availableWorkerSlots: number;
+  workers: WorkerSummary[];
+  source: "redis";
+  error?: string;
 }
 
 export interface SessionStatusResponse {
@@ -41,10 +60,18 @@ export interface SessionStatusResponse {
   plan?: string;
   expiresAt?: string;
   membershipValidUntil?: string;
+  sessionStatus?: "active" | "inactive";
+  revocationStatus?: "not_revoked" | "revoked" | "unknown";
+  workerLimit?: number;
+  activeWorkers?: number;
+  availableWorkerSlots?: number;
+  workers?: WorkerSummary[];
+  workerStatus?: WorkerStatus;
+  membership?: MembershipStatus;
 }
 
 export interface ApiError {
   error: string;
   status?: number;
-  membership?: MembershipResponse;
+  membership?: MembershipStatus;
 }

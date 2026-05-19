@@ -8,7 +8,14 @@ export interface ChallengeRecord {
   used: boolean;
 }
 
-export type MembershipTier = "founding-miner" | "base" | "none";
+export type MembershipTier =
+  | "founding-miner"
+  | "guardian"
+  | "pro"
+  | "active"
+  | "base"
+  | "prototype"
+  | "none";
 
 export interface MembershipStatus {
   wallet: string;
@@ -38,6 +45,23 @@ export interface SessionPayload {
   exp: number;
 }
 
+export interface WorkerSummary {
+  workerName: string;
+  connectedAt?: string;
+  authorized?: boolean;
+}
+
+export interface WorkerStatus {
+  wallet: string;
+  plan: string;
+  workerLimit: number;
+  activeWorkers: number;
+  availableWorkerSlots: number;
+  workers: WorkerSummary[];
+  source: "redis";
+  error?: string;
+}
+
 export interface AuthRequestChallengeBody {
   wallet: string;
 }
@@ -56,6 +80,14 @@ export interface SessionStatusQuery {
   plan?: MembershipTier;
   expiresAt?: string;
   membershipValidUntil?: string;
+  sessionStatus?: "active" | "inactive";
+  revocationStatus?: "not_revoked" | "revoked" | "unknown";
+  workerLimit?: number;
+  activeWorkers?: number;
+  availableWorkerSlots?: number;
+  workers?: WorkerSummary[];
+  workerStatus?: WorkerStatus;
+  membership?: MembershipStatus;
 }
 
 export interface RevokeSessionBody {

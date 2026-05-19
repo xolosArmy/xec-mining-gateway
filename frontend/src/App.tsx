@@ -10,9 +10,11 @@ import {
   ApiError,
   ChallengeResponse,
   MembershipResponse,
+  MembershipStatus,
   SessionStatusResponse,
   VerificationMode,
   VerifyResponse,
+  WorkerSummary,
 } from "./types";
 
 const DEFAULT_PLACEHOLDER =
@@ -59,6 +61,26 @@ const getStatusCode = (error: unknown): number | undefined => {
   }
 
   return undefined;
+};
+
+const formatBoolean = (value: boolean | undefined): string => {
+  if (typeof value !== "boolean") {
+    return "n/a";
+  }
+
+  return value ? "true" : "false";
+};
+
+const getWorkerBadgeClass = (authorized: boolean | undefined): string => {
+  if (authorized === true) {
+    return "success";
+  }
+
+  if (authorized === false) {
+    return "danger";
+  }
+
+  return "neutral";
 };
 
 const renderMembershipFields = (membership: MembershipResponse) => (
@@ -130,6 +152,35 @@ const renderMembershipFields = (membership: MembershipResponse) => (
   </div>
 );
 
+const renderWorkerList = (workers: WorkerSummary[]) => (
+  <div className="worker-list">
+    {workers.map((worker) => (
+      <article className="worker-item" key={worker.workerName}>
+        <div className="worker-item-header">
+          <h3>{worker.workerName}</h3>
+          <span className={`status-badge ${getWorkerBadgeClass(worker.authorized)}`}>
+            {worker.authorized === true
+              ? "authorized"
+              : worker.authorized === false
+                ? "denied"
+                : "unknown"}
+          </span>
+        </div>
+        <div className="worker-meta">
+          <div>
+            <span className="result-label">Connected At</span>
+            <pre className="code-block">{worker.connectedAt ?? "n/a"}</pre>
+          </div>
+          <div>
+            <span className="result-label">Authorized</span>
+            <pre className="code-block">{formatBoolean(worker.authorized)}</pre>
+          </div>
+        </div>
+      </article>
+    ))}
+  </div>
+);
+
 function App() {
   const [wallet, setWallet] = useState("");
   const [challenge, setChallenge] = useState<ChallengeResponse | null>(null);
@@ -183,7 +234,7 @@ function App() {
           ? "RMZ membership payment required"
           : apiError.status === 403 || apiError.error === "RMZ membership required"
             ? "RMZ membership required"
-          : apiError.error,
+            : apiError.error,
       );
     } finally {
       setLoadingAction(null);
@@ -240,20 +291,28 @@ function App() {
     }
   };
 
-  const handleCheckStatus = async () => {
+  const handleCheckStatus = async (refreshMembership = false) => {
     if (!session?.sessionToken) {
       return;
     }
 
-    setLoadingAction("status");
+    setLoadingAction(refreshMembership ? "status-refresh" : "status");
     setErrorMessage("");
     setSuccessMessage("");
 
     try {
-      const response = await getSessionStatus(session.sessionToken);
+      const response = await getSessionStatus(session.sessionToken, {
+        refreshMembership,
+      });
       setSessionStatus(response);
       setLatestResponse(response);
-      setSuccessMessage(response.active ? "Session is active." : "Session is inactive.");
+      setSuccessMessage(
+        response.active
+          ? refreshMembership
+            ? "Membership and worker status refreshed."
+            : "Session status refreshed."
+          : "Session is inactive.",
+      );
     } catch (error) {
       const apiError = {
         error: getErrorMessage(error),
@@ -278,7 +337,7 @@ function App() {
       const response = await revokeSession(session.sessionToken);
       setLatestResponse(response);
       setSessionStatus(null);
-      setSuccessMessage("Session revoked. You can check status again to confirm.");
+      setSuccessMessage("Session revoked. Refresh status to confirm.");
     } catch (error) {
       const apiError = {
         error: getErrorMessage(error),
@@ -290,6 +349,28 @@ function App() {
     }
   };
 
+  const dashboardMembership: MembershipStatus | undefined =
+    sessionStatus?.membership ?? session?.membership;
+  const dashboardWorkers =
+    sessionStatus?.workers ?? sessionStatus?.workerStatus?.workers ?? [];
+  const workerLimit =
+    sessionStatus?.workerLimit ?? sessionStatus?.workerStatus?.workerLimit;
+  const activeWorkers =
+    sessionStatus?.activeWorkers ?? sessionStatus?.workerStatus?.activeWorkers;
+  const availableWorkerSlots =
+    sessionStatus?.availableWorkerSlots ??
+    sessionStatus?.workerStatus?.availableWorkerSlots;
+  const workerStatusError = sessionStatus?.workerStatus?.error;
+  const membershipValidUntil =
+    sessionStatus?.membershipValidUntil ?? dashboardMembership?.validUntil;
+  const revocationStatus =
+    sessionStatus?.revocationStatus ??
+    (sessionStatus?.active ? "not_revoked" : "unknown");
+  const workerLimitReached =
+    typeof workerLimit === "number" &&
+    typeof activeWorkers === "number" &&
+    activeWorkers >= workerLimit;
+
   return (
     <div className="app-shell">
       <main className="container">
@@ -297,23 +378,16 @@ function App() {
           <p className="eyebrow">Membership Portal Prototype</p>
           <h1>eCash México Mining Gateway</h1>
           <p className="subtitle">
-            Prototype 2 for the eCash México Sovereign Mining Infrastructure
-            Teyolia campaign.
-          </p>
-          <p className="note">
-            Membership access is powered by RMZ. Prototype 6 introduces
-            Chronik-based RMZ verification.
+            Prototype 12 introduces a Miner Dashboard on top of the existing
+            Tonalli identity flow, RMZ membership control plane, and Stratum Mock
+            worker limits.
           </p>
           <p className="note">
             Approved test wallet: <code>{DEFAULT_PLACEHOLDER}</code>
           </p>
           <p className="note">
-            Chronik mode verifies RMZ ownership on-chain. Mock mode uses a
-            development registry.
-          </p>
-          <p className="note">
-            Payment mode verifies recent RMZ payments to the eCash México
-            Treasury. Proof-of-Hold mode remains available for prototype testing.
+            Wallet identity comes from Tonalli, membership access comes from RMZ,
+            and worker visibility now comes from Redis-backed Stratum state.
           </p>
         </header>
 
@@ -398,15 +472,15 @@ function App() {
                 {mockSignature || "Request a challenge to generate the mock signature."}
               </pre>
               <p className="note">
-                Mock mode preserves the existing prototype flow using
+                Mock mode uses
                 <code>mock-signature:&lt;wallet&gt;:&lt;challengeId&gt;</code>.
               </p>
             </>
           ) : (
             <>
               <p className="note">
-                Tonalli mode expects a real signature produced by Tonalli Wallet
-                over the exact challenge message shown above.
+                Tonalli mode expects a real signature over the exact challenge
+                message.
               </p>
               <label className="field-label" htmlFor="tonalliPublicKey">
                 Public key
@@ -489,7 +563,7 @@ function App() {
 
         <section className="card">
           <div className="section-heading">
-            <h2>Session Status</h2>
+            <h2>Miner Dashboard</h2>
             <span
               className={`status-badge ${
                 sessionStatus?.active ? "success" : "neutral"
@@ -501,20 +575,30 @@ function App() {
           <div className="action-row">
             <button
               type="button"
-              onClick={handleCheckStatus}
+              onClick={() => void handleCheckStatus(false)}
               disabled={!session || loadingAction !== null}
             >
               {loadingAction === "status"
-                ? "Checking..."
-                : "Check Session Status"}
+                ? "Refreshing..."
+                : "Refresh Session Status"}
+            </button>
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => void handleCheckStatus(true)}
+              disabled={!session || loadingAction !== null}
+            >
+              {loadingAction === "status-refresh"
+                ? "Refreshing..."
+                : "Refresh Membership + Workers"}
             </button>
           </div>
 
           {sessionStatus && (
-            <div className="result-grid">
-              <div>
-                <span className="result-label">Active</span>
-                <div>
+            <>
+              <div className="dashboard-grid">
+                <div className="dashboard-stat">
+                  <span className="result-label">Status</span>
                   <span
                     className={`status-badge ${
                       sessionStatus.active ? "success" : "danger"
@@ -523,28 +607,98 @@ function App() {
                     {sessionStatus.active ? "active" : "inactive"}
                   </span>
                 </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Session Status</span>
+                  <pre className="code-block">
+                    {sessionStatus.sessionStatus ?? "n/a"}
+                  </pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Revocation Status</span>
+                  <pre className="code-block">{revocationStatus}</pre>
+                </div>
+                <div className="dashboard-stat dashboard-stat-wide">
+                  <span className="result-label">Wallet</span>
+                  <pre className="code-block">{sessionStatus.wallet ?? "n/a"}</pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Tier / Plan</span>
+                  <pre className="code-block">{sessionStatus.plan ?? "n/a"}</pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Membership Source</span>
+                  <pre className="code-block">{dashboardMembership?.source ?? "n/a"}</pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Membership Status</span>
+                  <pre className="code-block">
+                    {dashboardMembership
+                      ? dashboardMembership.active
+                        ? "active"
+                        : "inactive"
+                      : "n/a"}
+                  </pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Membership Valid Until</span>
+                  <pre className="code-block">{membershipValidUntil ?? "n/a"}</pre>
+                </div>
+                <div className="dashboard-stat dashboard-stat-wide">
+                  <span className="result-label">Payment TXID</span>
+                  <pre className="code-block">
+                    {dashboardMembership?.paymentTxid ?? "n/a"}
+                  </pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Session Expires At</span>
+                  <pre className="code-block">{sessionStatus.expiresAt ?? "n/a"}</pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Active Workers</span>
+                  <pre className="code-block">
+                    {typeof activeWorkers === "number" && typeof workerLimit === "number"
+                      ? `${activeWorkers} / ${workerLimit}`
+                      : "n/a"}
+                  </pre>
+                </div>
+                <div className="dashboard-stat">
+                  <span className="result-label">Available Slots</span>
+                  <pre className="code-block">
+                    {typeof availableWorkerSlots === "number"
+                      ? availableWorkerSlots
+                      : "n/a"}
+                  </pre>
+                </div>
               </div>
-              <div>
-                <span className="result-label">Plan</span>
-                <pre className="code-block">{sessionStatus.plan ?? "n/a"}</pre>
-              </div>
-              <div className="result-full">
-                <span className="result-label">Wallet</span>
-                <pre className="code-block">{sessionStatus.wallet ?? "n/a"}</pre>
-              </div>
-              <div className="result-full">
-                <span className="result-label">Expires At</span>
-                <pre className="code-block">
-                  {sessionStatus.expiresAt ?? "n/a"}
-                </pre>
-              </div>
-              <div className="result-full">
-                <span className="result-label">Membership Valid Until</span>
-                <pre className="code-block">
-                  {sessionStatus.membershipValidUntil ?? "n/a"}
-                </pre>
-              </div>
-            </div>
+
+              {workerLimitReached && (
+                <p className="feedback warning">
+                  Worker limit reached for your membership tier.
+                </p>
+              )}
+
+              {workerStatusError && (
+                <p className="feedback warning">
+                  Worker status is temporarily unavailable.
+                </p>
+              )}
+
+              {dashboardMembership?.error && (
+                <p className="feedback warning">{dashboardMembership.error}</p>
+              )}
+
+              {dashboardWorkers.length > 0 && (
+                <div className="worker-section">
+                  <div className="section-heading worker-section-heading">
+                    <h2>Workers</h2>
+                    <span className="status-badge neutral">
+                      {dashboardWorkers.length} active
+                    </span>
+                  </div>
+                  {renderWorkerList(dashboardWorkers)}
+                </div>
+              )}
+            </>
           )}
         </section>
 
@@ -554,12 +708,15 @@ function App() {
             <span className="status-badge neutral">Step 4</span>
           </div>
           <p className="note">
-            Revocation is now stored in Redis and shared with the Stratum Gateway
-            mock.
+            Revocation is stored in Redis and shared with the Stratum Gateway mock.
+          </p>
+          <p className="note danger-note">
+            Advanced action. This is intended to invalidate future worker
+            authorizations for the current token.
           </p>
           <button
             type="button"
-            className="button-secondary"
+            className="button-danger"
             onClick={handleRevoke}
             disabled={!session || loadingAction !== null}
           >

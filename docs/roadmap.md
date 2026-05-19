@@ -91,6 +91,25 @@ Out of scope:
 - production pool accounting
 - payouts
 
+## Prototype 12 — Miner Dashboard
+
+Status: prototype
+
+Scope:
+
+- Stratum publishes active worker state to Redis
+- Backend reads worker count and worker list
+- Frontend displays miner dashboard
+- Worker limit usage is visible to user
+
+Out of scope:
+
+- public global dashboard
+- treasury revenue dashboard
+- real ASIC telemetry
+- hashrate charts
+- production stale worker cleanup
+
 ## Strategic Direction
 
 - Membership access is powered by RMZ through Tonalli Wallet.

@@ -50,6 +50,27 @@ const parseChronikUrls = (value: string | undefined): string[] => {
     .filter((url) => url.length > 0);
 };
 
+export const WORKER_LIMITS = {
+  base: 1,
+  active: 5,
+  pro: 20,
+  guardian: 100,
+  "founding-miner": 100,
+  prototype: 1,
+} as const;
+
+export const DEFAULT_WORKER_LIMIT = 1;
+
+export const getWorkerLimitForPlan = (plan: string | undefined): number => {
+  if (typeof plan !== "string") {
+    return DEFAULT_WORKER_LIMIT;
+  }
+
+  const normalizedPlan = plan.trim().toLowerCase();
+
+  return WORKER_LIMITS[normalizedPlan as keyof typeof WORKER_LIMITS] ?? DEFAULT_WORKER_LIMIT;
+};
+
 export const config = {
   PORT: parseNumber(process.env.PORT, 3001),
   // Local development fallback only. Production must provide a strong secret.

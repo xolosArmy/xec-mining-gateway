@@ -90,8 +90,15 @@ export const verifyChallenge = async (
 
 export const getSessionStatus = async (
   sessionToken: string,
+  options?: {
+    refreshMembership?: boolean;
+  },
 ): Promise<SessionStatusResponse> => {
-  const response = await fetch(buildUrl("/v1/session/status"), {
+  const refreshMembership = options?.refreshMembership === true;
+  const path = refreshMembership
+    ? "/v1/session/status?refreshMembership=true"
+    : "/v1/session/status";
+  const response = await fetch(buildUrl(path), {
     headers: {
       Authorization: `Bearer ${sessionToken}`,
     },
